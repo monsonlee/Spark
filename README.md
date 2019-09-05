@@ -1,4 +1,4 @@
-Spark调优思路
+**Spark调优思路**
 
 -   [目录](#目录)
 
@@ -475,6 +475,8 @@ Spark的资源参数，基本都可以在spark-submit命令中作为参数设置
 
 preview
 
+preview
+
 Executor的内存主要分为三块：第一块是让task执行我们自己编写的代码时使用，默认是占Executor总内存的20%；第二块是让task通过shuffle过程拉取了上一个stage的task的输出后，进行聚合等操作时使用，默认也是占Executor总内存的20%；第三块是让RDD持久化时使用，默认占Executor总内存的60%。
 
 task的执行速度是跟每个Executor进程的CPU core数量有直接关系的。一个CPU
@@ -686,6 +688,8 @@ find，executor、task lost，out of memory（内存溢出）；
 
 preview
 
+preview
+
 3.2如何定位导致数据倾斜的代码
 -----------------------------
 
@@ -776,6 +780,8 @@ by语句进行分组聚合时，比较适用这种方案。
 
 preview
 
+preview
+
 ### 解决方案五：将reduce join转为map join
 
 方案适用场景：在对RDD使用join类操作，或者是在Spark
@@ -793,6 +799,8 @@ join，此时就不会发生shuffle操作，也就不会发生数据倾斜。具
 方案缺点：适用场景较少，因为这个方案只适用于一个大表和一个小表的情况。毕竟我们需要将小表进行广播，此时会比较消耗内存资源，driver和每个Executor内存中都会驻留一份小RDD的全量数据。如果我们广播出去的RDD数据比较大，比如10G以上，那么就可能发生内存溢出了。因此并不适合两个都是大表的情况。
 
 ![preview](media/804a4365ceea0824f4e401ce04a8ee10.jpg)
+
+preview
 
 preview
 
@@ -821,6 +829,8 @@ preview
 方案缺点：如果导致倾斜的key特别多的话，比如成千上万个key都导致数据倾斜，那么这种方式也不适合。
 
 ![preview](media/dd6fc065882fa3c1b259a9b6fe664f6c.jpg)
+
+preview
 
 preview
 
