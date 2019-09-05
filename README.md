@@ -1,3 +1,55 @@
+- [0.优化点](#0---)
+- [1.开发调优](#----)
+  * [1.1避免创建重复的RDD](#11-------rdd)
+  * [1.2尽量重用同一个RDD](#12-------rdd)
+  * [1.3对多次使用的RDD进行持久化](#13------rdd-----)
+  * [1.4尽量避免使用shuffle类算子](#14------shuffle---)
+  * [1.5使用map-side预聚合的算子进行shuffle操作](#15--map-side--------shuffle--)
+  * [1.6使用高性能的算子](#16--------)
+  * [1.7广播大变量broadcast](#17-----broadcast)
+  * [1.8使用Kryo优化序列化性能](#18--kryo-------)
+  * [1.9优化数据结构](#19------)
+  * [1.10使用fastutil的类集代替java的类集](#110--fastutil-----java---)
+  * [1.11设置数据调度等待时间](#111----------)
+  * [1.12RDD partitionby](#112rdd-partitionby)
+  * [1.13join时分区方式](#113join-----)
+- [2.资源调优](#2----)
+  * [2.1num-executors](#21num-executors)
+  * [2.2executor-memory](#22executor-memory)
+  * [2.3executor-cores](#23executor-cores)
+  * [2.4driver-memory](#24driver-memory)
+  * [2.5spark.default.parallelism](#25sparkdefaultparallelism)
+  * [2.6spark.storage.memoryfraction](#26sparkstoragememoryfraction)
+  * [2.7spark.shuffle.memoryfraction](#27sparkshufflememoryfraction)
+    + [JVM调优：降低RDD的cache操作的内存占比](#jvm-----rdd-cache-------)
+      - [1、先介绍JVM的内存机制](#1----jvm-----)
+      - [2、调优方式](#2-----)
+  * [2.8JVM调优：堆外内存溢出](#28jvm---------)
+  * [2.9spark.cores.max 21](#29sparkcoresmax-21)
+  * [示例](#--)
+- [3.数据倾斜调优](#3------)
+  * [3.1数据倾斜的原理](#31-------)
+  * [3.2如何定位导致数据倾斜的代码](#32-------------)
+  * [3.3数据倾斜的解决方案](#33---------)
+    + [解决方案一：使用Hive ETL预处理数据](#--------hive-etl-----)
+    + [解决方案二：过滤少数导致倾斜的key](#---------------key)
+    + [解决方案三：提高shuffle操作的并行度](#--------shuffle------)
+    + [解决方案四：两阶段聚合（局部聚合+全局聚合）](#----------------------)
+    + [解决方案五：将reduce join转为map join](#-------reduce-join--map-join)
+    + [解决方案六：采样倾斜key并分拆join操作](#----------key---join--)
+    + [解决方案七：使用随机前缀和扩容RDD进行join](#---------------rdd--join)
+    + [解决方案八：多种方案组合使用](#--------------)
+- [4.shuffle调优](#4shuffle--)
+  * [4.1spark.shuffle.file.buffer](#41sparkshufflefilebuffer)
+  * [4.2spark.reducer.maxSizeInFlight](#42sparkreducermaxsizeinflight)
+  * [4.3spark.shuffle.io.maxRetries](#43sparkshuffleiomaxretries)
+  * [4.4spark.shuffle.io.retryWait](#44sparkshuffleioretrywait)
+  * [4.5spark.shuffle.memoryFraction](#45sparkshufflememoryfraction)
+  * [4.6spark.shuffle.manager](#46sparkshufflemanager)
+  * [4.7spark.shuffle.sort.bypassMergeThreshold](#47sparkshufflesortbypassmergethreshold)
+  * [4.8spark.shuffle.consolidateFiles](#48sparkshuffleconsolidatefiles)
+
+
 0.优化点
 ========
 
@@ -37,7 +89,7 @@
 
 4、广播变量
 
-开发调优
+1.开发调优
 ========
 
 1.1避免创建重复的RDD
