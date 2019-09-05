@@ -1,58 +1,107 @@
-- [Spark调优思路](#0spark调优思路)
+[Spark调优思路](#0spark调优思路)
 
-- [目录](#目录)
-- [0.优化点](#0优化点)
-- [1.开发调优](#1开发调优)
-  * [1.1避免创建重复的RDD](#11避免创建重复的rdd)
-  * [1.2尽量重用同一个RDD](#12尽量重用同一个rdd)
-  * [1.3对多次使用的RDD进行持久化](#13对多次使用的rdd进行持久化)
-  * [1.4尽量避免使用shuffle类算子](#14尽量避免使用shuffle类算子)
-  * [1.5使用map-side预聚合的算子进行shuffle操作](#15使用map-side预聚合的算子进行shuffle操作)
-  * [1.6使用高性能的算子](#16使用高性能的算子)
-  * [1.7广播大变量broadcast](#17广播大变量broadcast)
-  * [1.8使用Kryo优化序列化性能](#18使用kryo优化序列化性能)
-  * [1.9优化数据结构](#19优化数据结构)
-  * [1.10使用fastutil的类集代替java的类集](#110使用fastutil的类集代替java的类集)
-  * [1.11设置数据调度等待时间](#111设置数据调度等待时间)
-  * [1.12RDD partitionby](#112rdd-partitionby)
-  * [1.13join时分区方式](#113join时分区方式)
-- [2.资源调优](#2资源调优)
-  * [2.1num-executors](#21num-executors)
-  * [2.2executor-memory](#22executor-memory)
-  * [2.3executor-cores](#23executor-cores)
-  * [2.4driver-memory](#24driver-memory)
-  * [2.5spark.default.parallelism](#25sparkdefaultparallelism)
-  * [2.6spark.storage.memoryfraction](#26sparkstoragememoryfraction)
-  * [2.7spark.shuffle.memoryfraction](#27sparkshufflememoryfraction)
-    + [JVM调优：降低RDD的cache操作的内存占比](#jvm调优-降低rdd的cache操作的内存占比)
-      - [1、先介绍JVM的内存机制](#1先介绍jvm的内存机制)
-      - [2、调优方式](#2调优方式)
-  * [2.8JVM调优：堆外内存溢出](#28jvm调优-堆外内存溢出)
-  * [2.9spark.cores.max 21](#29sparkcoresmax-21)
-  * [示例](#示例)
-- [3.数据倾斜调优](#3数据倾斜调优)
-  * [3.1数据倾斜的原理](#31数据倾斜的原理)
-  * [3.2如何定位导致数据倾斜的代码](#32如何定位导致数据倾斜的代码)
-  * [3.3数据倾斜的解决方案](#33数据倾斜的解决方案)
-    + [解决方案一：使用Hive ETL预处理数据](#解决方案一-使用hive-etl预处理数据)
-    + [解决方案二：过滤少数导致倾斜的key](#解决方案二-过滤少数导致倾斜的key)
-    + [解决方案三：提高shuffle操作的并行度](#解决方案三-提高shuffle操作的并行度)
-    + [解决方案四：两阶段聚合（局部聚合+全局聚合）](#解决方案四)
-    + [解决方案五：将reduce join转为map join](#解决方案五-将reduce-join转为map-join)
-    + [解决方案六：采样倾斜key并分拆join操作](#解决方案六-采样倾斜key并分拆join操作)
-    + [解决方案七：使用随机前缀和扩容RDD进行join](#解决方案七-使用随机前缀和扩容rdd进行join)
-    + [解决方案八：多种方案组合使用](#解决方案八-多种方案组合使用)
-- [4.shuffle调优](#4shuffle调优)
-  * [4.1spark.shuffle.file.buffer](#41sparkshufflefilebuffer)
-  * [4.2spark.reducer.maxSizeInFlight](#42sparkreducermaxsizeinflight)
-  * [4.3spark.shuffle.io.maxRetries](#43sparkshuffleiomaxretries)
-  * [4.4spark.shuffle.io.retryWait](#44sparkshuffleioretrywait)
-  * [4.5spark.shuffle.memoryFraction](#45sparkshufflememoryfraction)
-  * [4.6spark.shuffle.manager](#46sparkshufflemanager)
-  * [4.7spark.shuffle.sort.bypassMergeThreshold](#47sparkshufflesortbypassmergethreshold)
-  * [4.8spark.shuffle.consolidateFiles](#48sparkshuffleconsolidatefiles)
+-   [目录](#目录)
 
+-   [0.优化点](#0优化点)
 
+-   [1.开发调优](#1开发调优)
+
+-   [1.1避免创建重复的RDD](#11避免创建重复的rdd)
+
+-   [1.2尽量重用同一个RDD](#12尽量重用同一个rdd)
+
+-   [1.3对多次使用的RDD进行持久化](#13对多次使用的rdd进行持久化)
+
+-   [1.4尽量避免使用shuffle类算子](#14尽量避免使用shuffle类算子)
+
+-   [1.5使用map-side预聚合的算子进行shuffle操作](#15使用map-side预聚合的算子进行shuffle操作)
+
+-   [1.6使用高性能的算子](#16使用高性能的算子)
+
+-   [1.7广播大变量broadcast](#17广播大变量broadcast)
+
+-   [1.8使用Kryo优化序列化性能](#18使用kryo优化序列化性能)
+
+-   [1.9优化数据结构](#19优化数据结构)
+
+-   [1.10使用fastutil的类集代替java的类集](#110使用fastutil的类集代替java的类集)
+
+-   [1.11设置数据调度等待时间](#111设置数据调度等待时间)
+
+-   [1.12RDD partitionby](#112rdd-partitionby)
+
+-   [1.13join时分区方式](#113join时分区方式)
+
+-   [2.资源调优](#2资源调优)
+
+-   [2.1num-executors](#21num-executors)
+
+-   [2.2executor-memory](#22executor-memory)
+
+-   [2.3executor-cores](#23executor-cores)
+
+-   [2.4driver-memory](#24driver-memory)
+
+-   [2.5spark.default.parallelism](#25sparkdefaultparallelism)
+
+-   [2.6spark.storage.memoryfraction](#26sparkstoragememoryfraction)
+
+-   [2.7spark.shuffle.memoryfraction](#27sparkshufflememoryfraction)
+
+    -   [JVM调优：降低RDD的cache操作的内存占比](#jvm调优-降低rdd的cache操作的内存占比)
+
+    -   [1、先介绍JVM的内存机制](#1先介绍jvm的内存机制)
+
+    -   [2、调优方式](#2调优方式)
+
+-   [2.8JVM调优：堆外内存溢出](#28jvm调优-堆外内存溢出)
+
+-   [2.9spark.cores.max 21](#29sparkcoresmax-21)
+
+-   [示例](#示例)
+
+-   [3.数据倾斜调优](#3数据倾斜调优)
+
+-   [3.1数据倾斜的原理](#31数据倾斜的原理)
+
+-   [3.2如何定位导致数据倾斜的代码](#32如何定位导致数据倾斜的代码)
+
+-   [3.3数据倾斜的解决方案](#33数据倾斜的解决方案)
+
+    -   [解决方案一：使用Hive ETL预处理数据](#解决方案一-使用hive-etl预处理数据)
+
+    -   [解决方案二：过滤少数导致倾斜的key](#解决方案二-过滤少数导致倾斜的key)
+
+    -   [解决方案三：提高shuffle操作的并行度](#解决方案三-提高shuffle操作的并行度)
+
+    -   [解决方案四：两阶段聚合（局部聚合+全局聚合）](#解决方案四)
+
+    -   [解决方案五：将reduce join转为map
+        join](#解决方案五-将reduce-join转为map-join)
+
+    -   [解决方案六：采样倾斜key并分拆join操作](#解决方案六-采样倾斜key并分拆join操作)
+
+    -   [解决方案七：使用随机前缀和扩容RDD进行join](#解决方案七-使用随机前缀和扩容rdd进行join)
+
+    -   [解决方案八：多种方案组合使用](#解决方案八-多种方案组合使用)
+
+-   [4.shuffle调优](#4shuffle调优)
+
+-   [4.1spark.shuffle.file.buffer](#41sparkshufflefilebuffer)
+
+-   [4.2spark.reducer.maxSizeInFlight](#42sparkreducermaxsizeinflight)
+
+-   [4.3spark.shuffle.io.maxRetries](#43sparkshuffleiomaxretries)
+
+-   [4.4spark.shuffle.io.retryWait](#44sparkshuffleioretrywait)
+
+-   [4.5spark.shuffle.memoryFraction](#45sparkshufflememoryfraction)
+
+-   [4.6spark.shuffle.manager](#46sparkshufflemanager)
+
+-   [4.7spark.shuffle.sort.bypassMergeThreshold](#47sparkshufflesortbypassmergethreshold)
+
+-   [4.8spark.shuffle.consolidateFiles](#48sparkshuffleconsolidatefiles)
 
 0.优化点
 ========
@@ -94,7 +143,7 @@
 4、广播变量
 
 1.开发调优
-========
+==========
 
 1.1避免创建重复的RDD
 --------------------
@@ -424,6 +473,8 @@ Spark的资源参数，基本都可以在spark-submit命令中作为参数设置
 
 ![preview](media/218bcc78a2877848d2c51adec3bea2d0.jpg)
 
+preview
+
 Executor的内存主要分为三块：第一块是让task执行我们自己编写的代码时使用，默认是占Executor总内存的20%；第二块是让task通过shuffle过程拉取了上一个stage的task的输出后，进行聚合等操作时使用，默认也是占Executor总内存的20%；第三块是让RDD持久化时使用，默认占Executor总内存的60%。
 
 task的执行速度是跟每个Executor进程的CPU core数量有直接关系的。一个CPU
@@ -633,6 +684,8 @@ find，executor、task lost，out of memory（内存溢出）；
 
 ![preview](media/53378b8fedd81ead0d9c75bb54a5de7c.jpg)
 
+preview
+
 3.2如何定位导致数据倾斜的代码
 -----------------------------
 
@@ -721,6 +774,8 @@ by语句进行分组聚合时，比较适用这种方案。
 
 ![preview](media/449c7cb1990fd9547e7a4c3ca42ec6c6.jpg)
 
+preview
+
 ### 解决方案五：将reduce join转为map join
 
 方案适用场景：在对RDD使用join类操作，或者是在Spark
@@ -738,6 +793,8 @@ join，此时就不会发生shuffle操作，也就不会发生数据倾斜。具
 方案缺点：适用场景较少，因为这个方案只适用于一个大表和一个小表的情况。毕竟我们需要将小表进行广播，此时会比较消耗内存资源，driver和每个Executor内存中都会驻留一份小RDD的全量数据。如果我们广播出去的RDD数据比较大，比如10G以上，那么就可能发生内存溢出了。因此并不适合两个都是大表的情况。
 
 ![preview](media/804a4365ceea0824f4e401ce04a8ee10.jpg)
+
+preview
 
 ### 解决方案六：采样倾斜key并分拆join操作
 
@@ -764,6 +821,8 @@ join，此时就不会发生shuffle操作，也就不会发生数据倾斜。具
 方案缺点：如果导致倾斜的key特别多的话，比如成千上万个key都导致数据倾斜，那么这种方式也不适合。
 
 ![preview](media/dd6fc065882fa3c1b259a9b6fe664f6c.jpg)
+
+preview
 
 ### 解决方案七：使用随机前缀和扩容RDD进行join
 
