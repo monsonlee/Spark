@@ -17,47 +17,47 @@
 
 -   [1.开发调优](#1开发调优)
 
--   [1.1避免创建重复的RDD](#11避免创建重复的rdd)
+  * [1.1避免创建重复的RDD](#11避免创建重复的rdd)
 
--   [1.2尽量重用同一个RDD](#12尽量重用同一个rdd)
+  * [1.2尽量重用同一个RDD](#12尽量重用同一个rdd)
 
--   [1.3对多次使用的RDD进行持久化](#13对多次使用的rdd进行持久化)
+  * [1.3对多次使用的RDD进行持久化](#13对多次使用的rdd进行持久化)
 
--   [1.4尽量避免使用shuffle类算子](#14尽量避免使用shuffle类算子)
+  * [1.4尽量避免使用shuffle类算子](#14尽量避免使用shuffle类算子)
 
--   [1.5使用map-side预聚合的算子进行shuffle操作](#15使用map-side预聚合的算子进行shuffle操作)
+  * [1.5使用map-side预聚合的算子进行shuffle操作](#15使用map-side预聚合的算子进行shuffle操作)
 
--   [1.6使用高性能的算子](#16使用高性能的算子)
+  * [1.6使用高性能的算子](#16使用高性能的算子)
 
--   [1.7广播大变量broadcast](#17广播大变量broadcast)
+  * [1.7广播大变量broadcast](#17广播大变量broadcast)
 
--   [1.8使用Kryo优化序列化性能](#18使用kryo优化序列化性能)
+  * [1.8使用Kryo优化序列化性能](#18使用kryo优化序列化性能)
 
--   [1.9优化数据结构](#19优化数据结构)
+  * [1.9优化数据结构](#19优化数据结构)
 
--   [1.10使用fastutil的类集代替java的类集](#110使用fastutil的类集代替java的类集)
+  * [1.10使用fastutil的类集代替java的类集](#110使用fastutil的类集代替java的类集)
 
--   [1.11设置数据调度等待时间](#111设置数据调度等待时间)
+  * [1.11设置数据调度等待时间](#111设置数据调度等待时间)
 
--   [1.12RDD partitionby](#112rdd-partitionby)
+  * [1.12RDD partitionby](#112rdd-partitionby)
 
--   [1.13join时分区方式](#113join时分区方式)
+  * [1.13join时分区方式](#113join时分区方式)
 
 -   [2.资源调优](#2资源调优)
 
--   [2.1num-executors](#21num-executors)
+  * [2.1num-executors](#21num-executors)
 
--   [2.2executor-memory](#22executor-memory)
+  * [2.2executor-memory](#22executor-memory)
 
--   [2.3executor-cores](#23executor-cores)
+  * [2.3executor-cores](#23executor-cores)
 
--   [2.4driver-memory](#24driver-memory)
+  * [2.4driver-memory](#24driver-memory)
 
--   [2.5spark.default.parallelism](#25sparkdefaultparallelism)
+  * [2.5spark.default.parallelism](#25sparkdefaultparallelism)
 
--   [2.6spark.storage.memoryfraction](#26sparkstoragememoryfraction)
+  * [2.6spark.storage.memoryfraction](#26sparkstoragememoryfraction)
 
--   [2.7spark.shuffle.memoryfraction](#27sparkshufflememoryfraction)
+  * [2.7spark.shuffle.memoryfraction](#27sparkshufflememoryfraction)
 
     -   [JVM调优：降低RDD的cache操作的内存占比](#jvm调优-降低rdd的cache操作的内存占比)
 
@@ -65,19 +65,19 @@
 
     -   [2、调优方式](#2调优方式)
 
--   [2.8JVM调优：堆外内存溢出](#28jvm调优-堆外内存溢出)
+  * [2.8JVM调优：堆外内存溢出](#28jvm调优-堆外内存溢出)
 
--   [2.9spark.cores.max 21](#29sparkcoresmax-21)
+  * [2.9spark.cores.max 21](#29sparkcoresmax-21)
 
--   [示例](#示例)
+    -   [示例](#示例)
 
 -   [3.数据倾斜调优](#3数据倾斜调优)
 
--   [3.1数据倾斜的原理](#31数据倾斜的原理)
+  * [3.1数据倾斜的原理](#31数据倾斜的原理)
 
--   [3.2如何定位导致数据倾斜的代码](#32如何定位导致数据倾斜的代码)
+  * [3.2如何定位导致数据倾斜的代码](#32如何定位导致数据倾斜的代码)
 
--   [3.3数据倾斜的解决方案](#33数据倾斜的解决方案)
+  * [3.3数据倾斜的解决方案](#33数据倾斜的解决方案)
 
     -   [解决方案一：使用Hive ETL预处理数据](#解决方案一-使用hive-etl预处理数据)
 
@@ -98,21 +98,21 @@
 
 -   [4.shuffle调优](#4shuffle调优)
 
--   [4.1spark.shuffle.file.buffer](#41sparkshufflefilebuffer)
+  * [4.1spark.shuffle.file.buffer](#41sparkshufflefilebuffer)
 
--   [4.2spark.reducer.maxSizeInFlight](#42sparkreducermaxsizeinflight)
+  * [4.2spark.reducer.maxSizeInFlight](#42sparkreducermaxsizeinflight)
 
--   [4.3spark.shuffle.io.maxRetries](#43sparkshuffleiomaxretries)
+  * [4.3spark.shuffle.io.maxRetries](#43sparkshuffleiomaxretries)
 
--   [4.4spark.shuffle.io.retryWait](#44sparkshuffleioretrywait)
+  * [4.4spark.shuffle.io.retryWait](#44sparkshuffleioretrywait)
 
--   [4.5spark.shuffle.memoryFraction](#45sparkshufflememoryfraction)
+  * [4.5spark.shuffle.memoryFraction](#45sparkshufflememoryfraction)
 
--   [4.6spark.shuffle.manager](#46sparkshufflemanager)
+  * [4.6spark.shuffle.manager](#46sparkshufflemanager)
 
--   [4.7spark.shuffle.sort.bypassMergeThreshold](#47sparkshufflesortbypassmergethreshold)
+  * [4.7spark.shuffle.sort.bypassMergeThreshold](#47sparkshufflesortbypassmergethreshold)
 
--   [4.8spark.shuffle.consolidateFiles](#48sparkshuffleconsolidatefiles)
+  * [4.8spark.shuffle.consolidateFiles](#48sparkshuffleconsolidatefiles)
 
 
 0.优化点
